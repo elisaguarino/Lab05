@@ -1,4 +1,6 @@
 import flet as ft
+
+from automobile import Automobile
 from alert import AlertManager
 from autonoleggio import Autonoleggio
 
@@ -17,7 +19,7 @@ def main(page: ft.Page):
     try:
         autonoleggio.carica_file_automobili(FILE_AUTO) # Carica il file
     except Exception as e:
-        alert.show_alert(f"❌ {e}") # Fa apparire una finestra che mostra l'errore
+        alert.show_alert(f"❌{e}") # Fa apparire una finestra che mostra l'errore
 
     # --- UI ELEMENTI ---
 
@@ -37,6 +39,13 @@ def main(page: ft.Page):
 
     # Tutti i TextField per le info necessarie per aggiungere una nuova automobile (marca, modello, anno, contatore posti)
     # TODO
+    input_marca=ft.TextField(label="Marca")
+    input_modello = ft.TextField(label="Modello")
+    input_anno= ft.TextField(label="Anno")
+
+    txtOut = ft.TextField(width=80, disabled=True,
+                          value="4", border_color=ft.Colors("green"),
+                          text_align=ft.TextAlign.CENTER, label="Posti")
 
     # --- FUNZIONI APP ---
     def aggiorna_lista_auto():
@@ -59,13 +68,60 @@ def main(page: ft.Page):
 
     # Handlers per la gestione dei bottoni utili all'inserimento di una nuova auto
     # TODO
+    def gestisci_bottone(e):
+        try:
+            marca=input_marca.value
+            modello=input_modello.value
+            posti=int(txtOut.value)
+            anno=int(input_anno.value)
+            autonoleggio.aggiungi_automobile(marca, modello, anno, posti)
+            if not marca or not modello or not input_anno.value or not txtOut.value:
+                raise ValueError("Tutti i campi devono essere compilati.")
 
+            input_marca.value = ""
+            input_modello.value = ""
+            input_anno.value = ""
+            txtOut.value = "4"
+
+            aggiorna_lista_auto()
+            alert.show_alert("✅ Automobile aggiunta con successo!")
+            page.update()
+        except ValueError as ex:
+            alert.show_alert(f"❌ Errore di Input: {ex}. Controlla Anno e Posti.")
+        #except Exception as ex:
+            #alert.show_alert(f"❌ Errore generico: {ex}")
+
+
+
+
+    def handleAdd(e):
+        currentVal =int( txtOut.value)
+        txtOut.value =str( currentVal + 1)
+        txtOut.update()
+
+    def handleRemove(e):
+        currentVal = int(txtOut.value)
+        if currentVal > 1:
+            txtOut.value = str(currentVal - 1)
+            txtOut.update()
+        else:
+            alert.show_alert("❌ L'auto deve avere almeno 1 posto.")
     # --- EVENTI ---
     toggle_cambia_tema = ft.Switch(label="Tema scuro", value=True, on_change=cambia_tema)
     pulsante_conferma_responsabile = ft.ElevatedButton("Conferma", on_click=conferma_responsabile)
 
+    btnMinus = ft.IconButton(icon=ft.Icons.REMOVE,
+                             icon_color="green",
+                             icon_size=24, on_click=handleRemove)
+    btnAdd = ft.IconButton(icon=ft.Icons.ADD,
+                           icon_color="green",
+                           icon_size=24, on_click=handleAdd)
+
+    row1 = ft.Row([btnMinus, txtOut, btnAdd],
+                  alignment=ft.MainAxisAlignment.CENTER)
     # Bottoni per la gestione dell'inserimento di una nuova auto
     # TODO
+    pulsante_conferma_auto = ft.ElevatedButton("Aggiungi", on_click=gestisci_bottone)
 
     # --- LAYOUT ---
     page.add(
@@ -84,6 +140,11 @@ def main(page: ft.Page):
 
         # Sezione 3
         # TODO
+        ft.Text("Aggiungi nuova automobile", size=20),
+        ft.Row(spacing=20,
+              # wrap=True,
+               controls= [input_marca,input_modello,input_anno,row1,pulsante_conferma_auto],
+               alignment=ft.MainAxisAlignment.CENTER),
 
         # Sezione 4
         ft.Divider(),
@@ -91,5 +152,5 @@ def main(page: ft.Page):
         lista_auto,
     )
     aggiorna_lista_auto()
-
+    #page.update()
 ft.app(target=main)
